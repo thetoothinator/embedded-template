@@ -1,0 +1,33 @@
+name: ci
+on: [push, pull_request]
+jobs:
+  basic-ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install tools
+        run: sudo apt-get update && sudo apt-get install -y cppcheck
+
+      - name: Python smoke test (ok if none)
+        run: |
+          python -V
+          pip install pytest
+          if [ -d tests ]; then
+            pytest -q || true
+          else
+            echo "No tests yet"
+          fi
+
+      - name: C/C++ static analysis (non-fatal)
+        run: |
+          if git ls-files '*.c' '*.h' '*.cpp' '*.hpp' | grep -q .; then
+            cppcheck --enable=warning,style,performance,portability --force . || true
+          else
+            echo "No C/C++ files yet"
+          fi
